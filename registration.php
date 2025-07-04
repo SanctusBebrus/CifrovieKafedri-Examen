@@ -1,51 +1,59 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KUDRYAVTSEV</title>
-</head>
-<body>
-    <div class="container">
-        <div class="row">
-            <div class="col-12 index">
-                <h1>Регистрация</h1>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-12">
-                <form method='POST' action='/registration.php'>
-                    <div class="row from_reg"><input class="from" type="text" name="login" placeholder="Login"></div>
-                    <div class="row from_reg"><input class="from" type="password" name="password" placeholder="Password"></div>
-                    <button type='submit' class="btn_reg" name="submit">Продолжить</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</body>
-</html> 
-
 <?php
 require_once('./db.php');
-$link = mysqli_connect('127.0.0.1', 'root', 'qwe', 'first_db');
+$link = mysqli_connect('db', 'root', 'qwe', 'first_db');
 
-if (isset($_COOKIE['User'])) 
-{
-    header("Location: login.php");
+session_start();
+
+if (isset($_COOKIE['User'])) {
+    // Если пользователь уже авторизован, перенаправим на профиль
+    header("Location: profile.php");
+    exit;
 }
+
+$error = '';
+$success = '';
 
 if (isset($_POST['submit'])) 
 {
-    $username = $_POST['login'];
-    $password = $_POST['password'];
+    $username = $_POST['login'] ?? '';
+    $email = $_POST['email'] ?? '';
+    $password = $_POST['password'] ?? '';
 
-    if (!$username || !$password) die ('Пожалуйста введите все значения!');
+    if (!$username || !$email || !$password) {
+        $error = 'Пожалуйста, заполните все поля!';
+    } else {
+        $sql = "INSERT INTO users (username, email, password) VALUES ('$username', '$email', '$password')";
 
-    $sql = "INSERT INTO users (username, password) VALUES ('$username', '$password')";
-
-    if(!mysqli_query($link, $sql)) 
-    {
-        echo "Не удалось добавить пользователя";
+        if(!mysqli_query($link, $sql)) {
+            $error = "Не удалось добавить пользователя: " . mysqli_error($link);
+        } else {
+            $success = "Пользователь успешно зарегистрирован. Теперь можно <a href='login.php'>войти</a>.";
+        }
     }
 }
+
+mysqli_close($link);
 ?>
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>KUDRYAVTSEV</title>
+</head>
+<body>
+    <h1>Регистрация</h1>
+    <?php if ($error): ?>
+        <p style="color:red;"><?php echo htmlspecialchars($error); ?></p>
+    <?php endif; ?>
+    <?php if ($success): ?>
+        <p style="color:green;"><?php echo $success; ?></p>
+    <?php endif; ?>
+    <form method="POST" action="">
+        <input type="text" name="login" placeholder="Login" required><br>
+        <input type="email" name="email" placeholder="Email" required><br>
+        <input type="password" name="password" placeholder="Password" required><br>
+        <button type="submit" name="submit">Продолжить</button>
+    </form>
+</body>
+</html>
